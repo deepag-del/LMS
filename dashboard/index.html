@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Safety Dashboard — R&D EHS</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;   /* incidents */
+    --series-2: #eb6834;   /* near-misses */
+    --seq-450: #2a78d6; --seq-350: #5598e7; --seq-300: #6da7ec; --seq-250: #86b6ef;
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+    --delta-good: #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7;
+      --muted: #898781; --grid: #2c2c2a; --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926;
+      --seq-450: #3987e5; --seq-350: #5598e7; --seq-300: #6da7ec; --seq-250: #86b6ef;
+      --delta-good: #0ca30c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19; --page: #0d0d0d;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926;
+    --seq-450: #3987e5; --seq-350: #5598e7; --seq-300: #6da7ec; --seq-250: #86b6ef;
+    --delta-good: #0ca30c;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--text-primary);
+    padding: 24px; line-height: 1.4;
+  }
+  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  h1 { font-size: 20px; font-weight: 650; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
+  .theme-btn {
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+    border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filters .seg { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-1); }
+  .filters button, .filters select {
+    border: 0; background: transparent; color: var(--text-secondary);
+    font: inherit; font-size: 13px; padding: 6px 12px; cursor: pointer;
+  }
+  .filters button[aria-pressed="true"] { color: var(--text-primary); font-weight: 650; background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+  .filters select { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
+  }
+  .tile .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .tile .value { font-size: 32px; font-weight: 650; letter-spacing: -0.5px; }
+  .tile .delta { font-size: 12px; margin-top: 4px; color: var(--text-secondary); }
+  .tile .delta.good  { color: var(--delta-good); }
+  .tile .delta.bad   { color: var(--status-critical); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 12px; }
+  #typeChart, #trainChart { width: 100%; height: auto; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .card h2 { font-size: 14px; font-weight: 650; margin-bottom: 2px; }
+  .card .sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .chart-wrap { overflow-x: auto; }
+  svg text { font-family: inherit; }
+  .tick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .dlabel { font-size: 11px; fill: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .cat { font-size: 12px; fill: var(--text-secondary); }
+  details { margin-top: 10px; font-size: 12px; }
+  summary { color: var(--text-secondary); cursor: pointer; }
+  table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 12.5px; }
+  th { text-align: left; color: var(--text-secondary); font-weight: 600; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+  .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .pill.open       { color: var(--status-serious); }
+  .pill.invest     { color: var(--status-warning); }
+  .pill.closed     { color: var(--status-good); }
+  #tooltip {
+    position: fixed; pointer-events: none; display: none; z-index: 10;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+    font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    font-variant-numeric: tabular-nums;
+  }
+  footer { margin-top: 20px; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lab Safety Dashboard</h1>
+  <button class="theme-btn" id="themeBtn" type="button">Toggle theme</button>
+</header>
+<p class="subtitle">Pharmaceutical R&amp;D site · 200 employees · governed by SOP-EHS-001 · demo data</p>
+
+<div class="filters" role="toolbar" aria-label="Dashboard filters">
+  <div class="seg" id="rangeSeg">
+    <button type="button" data-months="6">Last 6 months</button>
+    <button type="button" data-months="12" aria-pressed="true">Last 12 months</button>
+  </div>
+  <select id="deptSel" aria-label="Filter by lab">
+    <option value="all">All labs</option>
+  </select>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid2">
+  <div class="card" style="grid-column: 1 / -1;">
+    <h2>Incidents &amp; near-misses by month</h2>
+    <div class="sub">Counts per calendar month. Rising near-miss reporting with falling incidents is the healthy pattern.</div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--series-1)"></span>Incidents</span>
+      <span><span class="sw" style="background:var(--series-2)"></span>Near-misses</span>
+    </div>
+    <div class="chart-wrap"><svg id="trendChart" role="img" aria-label="Bar chart of incidents and near-misses by month"></svg></div>
+    <details><summary>View data table</summary><div id="trendTable"></div></details>
+  </div>
+
+  <div class="card">
+    <h2>Incidents by type</h2>
+    <div class="sub">Selected period, filtered by lab.</div>
+    <div class="chart-wrap"><svg id="typeChart" role="img" aria-label="Bar chart of incidents by type"></svg></div>
+    <details><summary>View data table</summary><div id="typeTable"></div></details>
+  </div>
+
+  <div class="card">
+    <h2>Training compliance by lab</h2>
+    <div class="sub">% of mandatory safety courses completed. Target 95% (dashed line).</div>
+    <div class="chart-wrap"><svg id="trainChart" role="img" aria-label="Bar chart of training compliance percentage by lab"></svg></div>
+    <details><summary>View data table</summary><div id="trainTable"></div></details>
+  </div>
+
+  <div class="card" style="grid-column: 1 / -1;">
+    <h2>Recent incidents &amp; near-misses</h2>
+    <div class="sub">Latest reports in the selected lab. Status per SOP-EHS-001 §5.7 workflow.</div>
+    <div class="chart-wrap"><table id="incTable"></table></div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+<footer>Demo dashboard · data is illustrative · see docs/requirements.md for the production app specification.</footer>
+
+<script>
+"use strict";
+// ---------- sample data ----------
+const MONTHS = ["Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26","Jun 26","Jul 26"];
+const TREND = { incidents: [4,3,5,2,3,2,3,1,2,2,1,1], nearMisses: [3,4,4,6,5,7,6,8,7,9,8,10] };
+const DEPTS = ["Synthesis Lab","Analytical Lab","Formulation Lab","Stability","Warehouse"];
+const TYPES = ["Chemical spill","Minor injury / first aid","Glassware breakage","Equipment / electrical","Fire / hot work","Ergonomic"];
+// incidents by [dept][type] over last 12 months
+const TYPE_BY_DEPT = {
+  "Synthesis Lab":   [5,2,3,1,1,0],
+  "Analytical Lab":  [2,1,4,2,0,1],
+  "Formulation Lab": [1,2,1,1,0,2],
+  "Stability":       [0,1,1,1,0,0],
+  "Warehouse":       [1,2,0,0,1,1],
+};
+const TRAINING = { "Synthesis Lab": 97, "Analytical Lab": 92, "Formulation Lab": 88, "Stability": 99, "Warehouse": 84 };
+const INCIDENTS = [
+  { date:"2026-07-18", dept:"Synthesis Lab",   type:"Near-miss",              desc:"Unsecured gas cylinder found during walkthrough", sev:"Low",    status:"Closed" },
+  { date:"2026-07-11", dept:"Analytical Lab",  type:"Glassware breakage",     desc:"HPLC vial tray dropped; no injury",               sev:"Low",    status:"Closed" },
+  { date:"2026-07-03", dept:"Formulation Lab", type:"Minor injury / first aid", desc:"Finger cut while opening blister tooling",      sev:"Medium", status:"Under investigation" },
+  { date:"2026-06-27", dept:"Synthesis Lab",   type:"Chemical spill",         desc:"~300 mL THF spill at rotavap; spill kit used",    sev:"Medium", status:"CAPA assigned" },
+  { date:"2026-06-14", dept:"Warehouse",       type:"Near-miss",              desc:"Pallet stacked above safe height",                sev:"Low",    status:"Closed" },
+  { date:"2026-06-02", dept:"Analytical Lab",  type:"Equipment / electrical", desc:"Frayed cord on hot plate detected before use",    sev:"Medium", status:"Closed" },
+];
+
+// ---------- state ----------
+const state = { months: 12, dept: "all" };
+
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function el(tag, attrs) {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+// column with 4px rounded top (data end), square baseline
+function topRoundedRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h);
+  return `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
+}
+// horizontal bar with 4px rounded right end
+function rightRoundedRect(x, y, w, h, r) {
+  r = Math.min(r, h / 2, w);
+  return `M${x},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} L${x},${y + h} Z`;
+}
+const tooltip = $("tooltip");
+function hover(node, html) {
+  node.addEventListener("pointerenter", () => { tooltip.innerHTML = html; tooltip.style.display = "block"; });
+  node.addEventListener("pointermove", e => {
+    tooltip.style.left = Math.min(e.clientX + 12, innerWidth - 180) + "px";
+    tooltip.style.top = (e.clientY + 12) + "px";
+  });
+  node.addEventListener("pointerleave", () => { tooltip.style.display = "none"; });
+}
+function dataTable(headers, rows) {
+  const th = headers.map((h, i) => `<th${i ? ' class="num"' : ""}>${h}</th>`).join("");
+  const trs = rows.map(r => "<tr>" + r.map((c, i) => `<td${i ? ' class="num"' : ""}>${c}</td>`).join("") + "</tr>").join("");
+  return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
+}
+
+// ---------- KPI row ----------
+function renderKpis() {
+  const n = state.months;
+  const inc = TREND.incidents.slice(-n), nm = TREND.nearMisses.slice(-n);
+  const sum = a => a.reduce((s, v) => s + v, 0);
+  const compliance = state.dept === "all"
+    ? Math.round(Object.values(TRAINING).reduce((s, v) => s + v, 0) / DEPTS.length)
+    : TRAINING[state.dept];
+  const kpis = [
+    { label: "Days since last recordable incident", value: 21, delta: "site record: 64", cls: "" },
+    { label: `Incidents (last ${n} mo)`, value: sum(inc), delta: "▼ 46% vs prior period", cls: "good" },
+    { label: `Near-misses reported (last ${n} mo)`, value: sum(nm), delta: "▲ reporting up — healthy", cls: "good" },
+    { label: "Training compliance", value: compliance + "%", delta: compliance >= 95 ? "✓ at 95% target" : "✕ below 95% target", cls: compliance >= 95 ? "good" : "bad" },
+    { label: "Open CAPAs", value: 7, delta: "2 overdue — escalated", cls: "bad" },
+  ];
+  $("kpis").innerHTML = kpis.map(k =>
+    `<div class="tile"><div class="label">${k.label}</div><div class="value">${k.value}</div><div class="delta ${k.cls}">${k.delta}</div></div>`
+  ).join("");
+}
+
+// ---------- chart 1: grouped columns, incidents vs near-misses ----------
+function renderTrend() {
+  const n = state.months;
+  const months = MONTHS.slice(-n);
+  const series = [
+    { name: "Incidents", data: TREND.incidents.slice(-n), color: css("--series-1") },
+    { name: "Near-misses", data: TREND.nearMisses.slice(-n), color: css("--series-2") },
+  ];
+  const W = Math.max(640, n * 56), H = 240, m = { t: 12, r: 8, b: 26, l: 30 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const maxV = Math.max(...series.flatMap(s => s.data));
+  const yMax = Math.ceil(maxV / 2) * 2;
+  const svg = $("trendChart");
+  svg.replaceChildren();
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", W); svg.setAttribute("height", H);
+  for (let v = 0; v <= yMax; v += 2) {
+    const y = m.t + ih - (v / yMax) * ih;
+    svg.append(el("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: v === 0 ? css("--baseline") : css("--grid"), "stroke-width": 1 }));
+    const t = el("text", { x: m.l - 6, y: y + 3.5, "text-anchor": "end", class: "tick" });
+    t.textContent = v; svg.append(t);
+  }
+  const slot = iw / n, barW = 14, gap = 2;
+  months.forEach((mo, i) => {
+    const cx = m.l + slot * i + slot / 2;
+    series.forEach((s, si) => {
+      const v = s.data[i];
+      const h = (v / yMax) * ih;
+      const x = cx - barW - gap / 2 + si * (barW + gap);
+      const p = el("path", { d: topRoundedRect(x, m.t + ih - h, barW, h, 4), fill: s.color });
+      hover(p, `<strong>${mo}</strong><br>${s.name}: ${v}`);
+      svg.append(p);
+    });
+    const t = el("text", { x: cx, y: H - 8, "text-anchor": "middle", class: "tick" });
+    t.textContent = mo.split(" ")[0]; svg.append(t);
+    // selective direct labels on first and last month only
+    if (i === 0 || i === n - 1) series.forEach((s, si) => {
+      const v = s.data[i], h = (v / yMax) * ih;
+      const x = cx - barW - gap / 2 + si * (barW + gap) + barW / 2;
+      const lt = el("text", { x, y: m.t + ih - h - 5, "text-anchor": "middle", class: "dlabel" });
+      lt.textContent = v; svg.append(lt);
+    });
+  });
+  $("trendTable").innerHTML = dataTable(["Month", "Incidents", "Near-misses"],
+    months.map((mo, i) => [mo, series[0].data[i], series[1].data[i]]));
+}
+
+// ---------- chart 2: incidents by type (horizontal, sequential) ----------
+function renderTypes() {
+  const totals = TYPES.map((_, ti) =>
+    DEPTS.filter(d => state.dept === "all" || d === state.dept)
+         .reduce((s, d) => s + TYPE_BY_DEPT[d][ti], 0));
+  const rows = TYPES.map((t, i) => ({ t, v: totals[i] })).sort((a, b) => b.v - a.v);
+  const W = 480, rowH = 34, m = { t: 6, r: 40, b: 6, l: 170 };
+  const H = m.t + rows.length * rowH + m.b;
+  const iw = W - m.l - m.r;
+  const maxV = Math.max(1, ...rows.map(r => r.v));
+  const svg = $("typeChart");
+  svg.replaceChildren();
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", W); svg.setAttribute("height", H);
+  svg.append(el("line", { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, stroke: css("--baseline"), "stroke-width": 1 }));
+  rows.forEach((r, i) => {
+    const y = m.t + i * rowH + (rowH - 16) / 2;
+    const w = Math.max((r.v / maxV) * iw, r.v ? 4 : 0);
+    const lab = el("text", { x: m.l - 8, y: y + 12, "text-anchor": "end", class: "cat" });
+    lab.textContent = r.t; svg.append(lab);
+    if (w) {
+      const p = el("path", { d: rightRoundedRect(m.l, y, w, 16, 4), fill: css("--seq-450") });
+      hover(p, `<strong>${r.t}</strong><br>${r.v} incident${r.v === 1 ? "" : "s"}`);
+      svg.append(p);
+    }
+    const vt = el("text", { x: m.l + w + 6, y: y + 12, class: "dlabel" });
+    vt.textContent = r.v; svg.append(vt);
+  });
+  $("typeTable").innerHTML = dataTable(["Type", "Incidents"], rows.map(r => [r.t, r.v]));
+}
+
+// ---------- chart 3: training compliance vs 95% target ----------
+function renderTraining() {
+  const rows = DEPTS.map(d => ({ d, v: TRAINING[d] }));
+  const W = 480, rowH = 34, m = { t: 6, r: 46, b: 20, l: 130 };
+  const H = m.t + rows.length * rowH + m.b;
+  const iw = W - m.l - m.r;
+  const svg = $("trainChart");
+  svg.replaceChildren();
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", W); svg.setAttribute("height", H);
+  svg.append(el("line", { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, stroke: css("--baseline"), "stroke-width": 1 }));
+  const tx = m.l + 0.95 * iw;
+  svg.append(el("line", { x1: tx, x2: tx, y1: m.t, y2: H - m.b, stroke: css("--muted"), "stroke-width": 1, "stroke-dasharray": "3 3" }));
+  const tl = el("text", { x: tx, y: H - 6, "text-anchor": "middle", class: "tick" });
+  tl.textContent = "95%"; svg.append(tl);
+  rows.forEach((r, i) => {
+    const y = m.t + i * rowH + (rowH - 16) / 2;
+    const w = (r.v / 100) * iw;
+    const lab = el("text", { x: m.l - 8, y: y + 12, "text-anchor": "end", class: "cat" });
+    lab.textContent = r.d; svg.append(lab);
+    const p = el("path", { d: rightRoundedRect(m.l, y, w, 16, 4), fill: css("--seq-450") });
+    hover(p, `<strong>${r.d}</strong><br>${r.v}% compliant · target 95%`);
+    svg.append(p);
+    const vt = el("text", { x: m.l + w + 6, y: y + 12, class: "dlabel" });
+    vt.textContent = r.v + "%"; svg.append(vt);
+  });
+  $("trainTable").innerHTML = dataTable(["Lab", "Compliance %"], rows.map(r => [r.d, r.v + "%"]));
+}
+
+// ---------- recent incidents table ----------
+function renderIncidents() {
+  const rows = INCIDENTS.filter(r => state.dept === "all" || r.dept === state.dept);
+  const pill = s => s === "Closed" ? "closed" : s === "Under investigation" ? "invest" : "open";
+  $("incTable").innerHTML =
+    "<thead><tr><th>Date</th><th>Lab</th><th>Type</th><th>Description</th><th>Severity</th><th>Status</th></tr></thead><tbody>" +
+    (rows.length ? rows.map(r =>
+      `<tr><td style="font-variant-numeric:tabular-nums">${r.date}</td><td>${r.dept}</td><td>${r.type}</td><td>${r.desc}</td><td>${r.sev}</td><td><span class="pill ${pill(r.status)}">${r.status}</span></td></tr>`
+    ).join("") : `<tr><td colspan="6" style="color:var(--muted)">No reports for this lab in the selected period.</td></tr>`) +
+    "</tbody>";
+}
+
+// ---------- wiring ----------
+function renderAll() { renderKpis(); renderTrend(); renderTypes(); renderTraining(); renderIncidents(); }
+
+DEPTS.forEach(d => {
+  const o = document.createElement("option");
+  o.value = d; o.textContent = d;
+  $("deptSel").append(o);
+});
+$("deptSel").addEventListener("change", e => { state.dept = e.target.value; renderAll(); });
+$("rangeSeg").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  state.months = +b.dataset.months;
+  for (const btn of $("rangeSeg").querySelectorAll("button")) btn.setAttribute("aria-pressed", btn === b);
+  renderAll();
+});
+$("themeBtn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme === "dark" || (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  root.dataset.theme = dark ? "light" : "dark";
+  renderAll();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
+renderAll();
+</script>
+</body>
+</html>
