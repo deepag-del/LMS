@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharma R&amp;D SOP Exam Portal</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --series-2:       #eb6834;
+    --series-3:       #1baf7a;
+    --status-good:     #0ca30c;
+    --status-warning:  #fab219;
+    --status-serious:  #ec835a;
+    --status-critical: #d03b3b;
+    --delta-good:      #006300;
+    --accent:          #2a78d6;
+    --accent-wash:     rgba(42,120,214,0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-2:       #d95926;
+      --series-3:       #199e70;
+      --delta-good:     #0ca30c;
+      --accent:         #3987e5;
+      --accent-wash:    rgba(57,135,229,0.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-2:       #d95926;
+    --series-3:       #199e70;
+    --delta-good:     #0ca30c;
+    --accent:         #3987e5;
+    --accent-wash:    rgba(57,135,229,0.14);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ─────────────────────────────────────────── */
+  .sidebar {
+    width: 264px; flex-shrink: 0;
+    background: var(--surface-1);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 16px; }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px;
+  }
+  .brand h1 { font-size: 15px; line-height: 1.25; }
+  .brand small { color: var(--text-muted); font-weight: 400; font-size: 11px; display: block; }
+
+  .role-toggle {
+    display: flex; background: var(--page); border: 1px solid var(--border);
+    border-radius: 8px; padding: 3px; margin: 4px 4px 16px; gap: 3px;
+  }
+  .role-toggle button {
+    flex: 1; border: 0; background: transparent; color: var(--text-secondary);
+    font: inherit; font-size: 12px; font-weight: 600; padding: 6px 4px;
+    border-radius: 6px; cursor: pointer;
+  }
+  .role-toggle button.active { background: var(--accent); color: #fff; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    border: 0; background: transparent; color: var(--text-secondary);
+    font: inherit; font-size: 13px; text-align: left;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--accent-wash); }
+  .nav-item.active { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+  .nav-num {
+    width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px;
+    background: var(--page); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+  }
+  .nav-item.active .nav-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .sidebar-foot { margin-top: 18px; padding: 12px 8px 0; border-top: 1px solid var(--border); }
+  .theme-btn {
+    width: 100%; border: 1px solid var(--border); background: transparent;
+    color: var(--text-secondary); font: inherit; font-size: 12px;
+    padding: 7px; border-radius: 8px; cursor: pointer;
+  }
+
+  /* ── Main ────────────────────────────────────────────── */
+  .main { flex: 1; padding: 28px 32px 60px; max-width: 1200px; }
+  .page-head { margin-bottom: 20px; }
+  .page-head h2 { font-size: 21px; margin-bottom: 2px; }
+  .page-head p { color: var(--text-secondary); font-size: 13px; }
+  .crumb { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 6px; }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; margin-bottom: 18px;
+  }
+  .card h3 { font-size: 14px; margin-bottom: 4px; }
+  .card .sub { color: var(--text-muted); font-size: 12px; margin-bottom: 14px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 980px) { .grid-2 { grid-template-columns: 1fr; } .stat-row { grid-template-columns: 1fr 1fr; } }
+
+  /* Stat tiles */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .stat {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .stat .label { font-size: 12px; color: var(--text-secondary); }
+  .stat .value { font-size: 28px; font-weight: 600; margin: 2px 0; }
+  .stat .delta { font-size: 12px; color: var(--text-muted); }
+  .stat .delta.up { color: var(--delta-good); }
+  .stat .delta.down { color: var(--status-critical); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-muted); font-weight: 600; padding: 8px 10px;
+    border-bottom: 1px solid var(--grid);
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--grid); color: var(--text-secondary); }
+  td:first-child { color: var(--text-primary); }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-wrap { overflow-x: auto; }
+
+  /* Badges — status color + label, never color alone */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .b-good .dot { background: var(--status-good); }
+  .b-warn .dot { background: var(--status-warning); }
+  .b-serious .dot { background: var(--status-serious); }
+  .b-crit .dot { background: var(--status-critical); }
+
+  /* Buttons & forms */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); background: var(--surface-1);
+    color: var(--text-primary); font: inherit; font-size: 13px; font-weight: 600;
+    padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .btn:hover { background: var(--accent-wash); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent); opacity: .9; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+  label.f { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin: 12px 0 4px; }
+  input[type=text], input[type=email], input[type=password], select, textarea {
+    width: 100%; padding: 8px 10px; font: inherit; font-size: 13px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--page); color: var(--text-primary);
+  }
+  .form-narrow { max-width: 420px; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--grid); margin-bottom: 16px; }
+  .tabs button {
+    border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); padding: 8px 14px; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Charts */
+  .chart-box svg { display: block; width: 100%; height: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .legend .linekey { width: 14px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 50; display: none;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    padding: 7px 10px; font-size: 12px; color: var(--text-secondary); max-width: 240px;
+  }
+  #tooltip b { color: var(--text-primary); display: block; font-size: 12px; }
+
+  /* Exam */
+  .exam-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .timer { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .timer.low { color: var(--status-critical); }
+  .q-card { margin-bottom: 14px; }
+  .q-card .q { font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
+  .opt { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 7px; cursor: pointer; color: var(--text-secondary); }
+  .opt:hover { background: var(--accent-wash); }
+  .opt input { margin-top: 3px; }
+
+  .result-hero { text-align: center; padding: 34px 20px; }
+  .result-hero .score { font-size: 52px; font-weight: 700; }
+  .result-hero .verdict { font-size: 15px; font-weight: 700; margin-top: 4px; }
+  .result-hero .verdict.pass { color: var(--delta-good); }
+  .result-hero .verdict.fail { color: var(--status-critical); }
+  .result-hero p { color: var(--text-secondary); margin-top: 8px; }
+
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+  .empty { color: var(--text-muted); font-size: 13px; padding: 18px 0; text-align: center; }
+  .page { display: none; }
+  .page.visible { display: block; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ══ Sidebar ══════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">Rx</div>
+      <h1>SOP Exam Portal <small>Pharma R&amp;D · Training &amp; Assessment</small></h1>
+    </div>
+
+    <div class="role-toggle" role="tablist" aria-label="View as role">
+      <button id="roleEmp" class="active" onclick="setRole('employee')">Employee</button>
+      <button id="roleAdm" onclick="setRole('admin')">HR / GL / CXO</button>
+    </div>
+
+    <nav id="nav"></nav>
+
+    <div class="sidebar-foot">
+      <button class="theme-btn" onclick="toggleTheme()">Toggle light / dark</button>
+    </div>
+  </aside>
+
+  <!-- ══ Main ═════════════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- 1 · Register (Employee) -->
+    <section class="page" id="page-register">
+      <div class="page-head"><div class="crumb">Employee · Step 1</div>
+        <h2>Register</h2><p>Create your employee account. HR approves new registrations before first login.</p></div>
+      <div class="card form-narrow">
+        <label class="f">Full name</label><input type="text" id="regName" placeholder="e.g. A. Sharma">
+        <label class="f">Employee ID</label><input type="text" id="regEmpId" placeholder="e.g. RD-1042">
+        <label class="f">Email</label><input type="email" id="regEmail" placeholder="name@company.com">
+        <label class="f">Department</label>
+        <select id="regDept"><option>Formulation</option><option>Analytical</option><option>Bioanalytical</option><option>Regulatory</option><option>Quality Assurance</option></select>
+        <label class="f">Password</label><input type="password" id="regPwd">
+        <div style="margin-top:16px"><button class="btn btn-primary" onclick="doRegister()">Register</button></div>
+        <div class="note" id="regMsg"></div>
+      </div>
+    </section>
+
+    <!-- 2 · Login -->
+    <section class="page" id="page-login">
+      <div class="page-head"><div class="crumb">All users</div>
+        <h2>Login</h2><p>Sign in to your training account.</p></div>
+      <div class="card form-narrow">
+        <div class="tabs">
+          <button id="loginTabEmp" class="active" onclick="loginTab('emp')">Employee</button>
+          <button id="loginTabAdm" onclick="loginTab('adm')">HR &amp; Admin</button>
+        </div>
+        <label class="f">Email or Employee ID</label><input type="text" id="loginUser" placeholder="name@company.com">
+        <label class="f">Password</label><input type="password" id="loginPwd">
+        <div style="margin-top:16px"><button class="btn btn-primary" onclick="doLogin()">Login</button></div>
+        <div class="note" id="loginMsg"></div>
+      </div>
+    </section>
+
+    <!-- 3 · SOP Library -->
+    <section class="page" id="page-library">
+      <div class="page-head"><div class="crumb">All users</div>
+        <h2>SOP Library</h2><p>Current effective SOPs for R&amp;D. Read the SOP before attempting its exam.</p></div>
+      <div class="card"><div class="table-wrap"><table id="libTable"></table></div></div>
+    </section>
+
+    <!-- 4 · My SOP Allocations (Employee) -->
+    <section class="page" id="page-myalloc">
+      <div class="page-head"><div class="crumb">Employee</div>
+        <h2>My SOP Allocations</h2><p>SOPs assigned to you, with due dates and exam status. Take the exam once you have read the SOP.</p></div>
+      <div class="card"><div class="table-wrap"><table id="myAllocTable"></table></div>
+        <div class="note">Passing score is 80%. A failed attempt is re-allocated for retraining automatically.</div></div>
+    </section>
+
+    <!-- 5 · SOP Allocation — Admin -->
+    <section class="page" id="page-alloc">
+      <div class="page-head"><div class="crumb">HR / Group Leader / CXO</div>
+        <h2>SOP Allocation (Admin)</h2><p>Assign SOPs to employees and set the exam due date.</p></div>
+      <div class="card form-narrow">
+        <h3>New allocation</h3>
+        <label class="f">Employee</label><select id="allocEmp"></select>
+        <label class="f">SOP</label><select id="allocSop"></select>
+        <label class="f">Due date</label><input type="text" id="allocDue" placeholder="YYYY-MM-DD">
+        <div style="margin-top:14px"><button class="btn btn-primary" onclick="doAllocate()">Allocate</button></div>
+        <div class="note" id="allocMsg"></div>
+      </div>
+      <div class="card"><h3>All allocations</h3><div class="sub">Across all employees</div>
+        <div class="table-wrap"><table id="allocTable"></table></div></div>
+    </section>
+
+    <!-- 6 · Revision & Retraining Tracker (Admin) -->
+    <section class="page" id="page-retrain">
+      <div class="page-head"><div class="crumb">HR / Group Leader / CXO</div>
+        <h2>Revision &amp; Retraining Tracker</h2><p>SOP revisions trigger re-training; failed exams trigger retraining. Track both here.</p></div>
+      <div class="card"><h3>Open retraining items</h3><div class="sub">Sorted by due date</div>
+        <div class="table-wrap"><table id="retrainTable"></table></div></div>
+    </section>
+
+    <!-- 7 · Question Bank (Admin) -->
+    <section class="page" id="page-qbank">
+      <div class="page-head"><div class="crumb">HR / Group Leader / CXO</div>
+        <h2>Question Bank</h2><p>Exam questions per SOP. Each exam draws 5 random questions from the SOP's pool.</p></div>
+      <div class="card">
+        <label class="f" style="margin-top:0">Filter by SOP</label>
+        <select id="qbankFilter" style="max-width:420px" onchange="renderQBank()"></select>
+        <div class="table-wrap" style="margin-top:14px"><table id="qbankTable"></table></div>
+      </div>
+    </section>
+
+    <!-- 8 · HR Policies -->
+    <section class="page" id="page-policies">
+      <div class="page-head"><div class="crumb">All users</div>
+        <h2>HR Policies</h2><p>Company training and compliance policies.</p></div>
+      <div class="card">
+        <div class="table-wrap"><table>
+          <tr><th>Policy</th><th>Summary</th><th>Effective</th></tr>
+          <tr><td>Training Compliance Policy</td><td>All allocated SOP exams must be passed within 30 days of allocation.</td><td>2026-01-01</td></tr>
+          <tr><td>Retraining Policy</td><td>Failed exams require re-reading the SOP and re-examination within 7 days.</td><td>2026-01-01</td></tr>
+          <tr><td>SOP Revision Policy</td><td>A revised SOP invalidates prior training; affected staff are re-allocated within 3 working days.</td><td>2026-03-15</td></tr>
+          <tr><td>Data Integrity (ALCOA+)</td><td>All training records are attributable, legible, contemporaneous, original and accurate.</td><td>2025-11-01</td></tr>
+          <tr><td>Exam Conduct Policy</td><td>Exams are closed-book, individually attempted, and time-boxed to 10 minutes.</td><td>2026-01-01</td></tr>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- 9 · Tracking Dashboard (Admin) -->
+    <section class="page" id="page-dashboard">
+      <div class="page-head"><div class="crumb">HR / Group Leader / CXO</div>
+        <h2>Tracking Dashboard</h2><p>Training compliance across R&amp;D — July 2026.</p></div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="label">Overall compliance</div><div class="value" id="statCompliance">—</div><div class="delta up">▲ 4 pts vs June</div></div>
+        <div class="stat"><div class="label">Active SOPs</div><div class="value" id="statSops">—</div><div class="delta">2 revised this month</div></div>
+        <div class="stat"><div class="label">Exams this month</div><div class="value" id="statExams">—</div><div class="delta up">▲ 12 vs June</div></div>
+        <div class="stat"><div class="label">Overdue allocations</div><div class="value" id="statOverdue">—</div><div class="delta down">▼ needs follow-up</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card chart-box">
+          <h3>Exam attempts vs passes</h3><div class="sub">Last 6 months, all departments</div>
+          <div id="chartLine"></div>
+          <div class="legend">
+            <span class="key"><span class="linekey" style="background:var(--series-1)"></span>Attempts</span>
+            <span class="key"><span class="linekey" style="background:var(--series-2)"></span>Passes</span>
+          </div>
+        </div>
+        <div class="card chart-box">
+          <h3>Pass rate by department</h3><div class="sub">Month to date, %</div>
+          <div id="chartBars"></div>
+        </div>
+      </div>
+
+      <div class="card chart-box">
+        <h3>Allocation status</h3><div class="sub">All open and closed allocations, month to date</div>
+        <div id="chartStack"></div>
+        <div class="legend">
+          <span class="key"><span class="swatch" style="background:var(--status-good)"></span>✓ Completed</span>
+          <span class="key"><span class="swatch" style="background:var(--status-warning)"></span>● Pending, in window</span>
+          <span class="key"><span class="swatch" style="background:var(--status-critical)"></span>▲ Overdue</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Department detail</h3><div class="sub">Table view of everything charted above</div>
+        <div class="table-wrap"><table id="dashTable"></table></div>
+      </div>
+    </section>
+
+    <!-- 10 · Exam Instructions (Employee) -->
+    <section class="page" id="page-instructions">
+      <div class="page-head"><div class="crumb">Employee</div>
+        <h2>Exam Instructions</h2><p id="instrSop">Select an SOP from “My SOP Allocations” to begin.</p></div>
+      <div class="card">
+        <h3>Before you begin</h3>
+        <ul style="color:var(--text-secondary); padding-left:20px; margin-top:8px; line-height:2">
+          <li>The exam has <b>5 questions</b> drawn randomly from the SOP's question bank.</li>
+          <li>Time limit: <b>10 minutes</b>. The exam auto-submits when time runs out.</li>
+          <li>Passing score: <b>80%</b> (4 of 5 correct).</li>
+          <li>The exam is closed-book — do not refer to the SOP during the attempt.</li>
+          <li>A failed attempt is re-allocated for retraining; you may re-attempt after re-reading the SOP.</li>
+        </ul>
+        <div style="margin-top:18px">
+          <button class="btn btn-primary" id="startExamBtn" onclick="startExam()" disabled>Start exam</button>
+          <button class="btn" onclick="show('myalloc')">Back to My Allocations</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 · Exam Screen (Employee) -->
+    <section class="page" id="page-exam">
+      <div class="page-head"><div class="crumb">Employee · In progress</div>
+        <h2 id="examTitle">Exam</h2><p>Answer all questions, then submit.</p></div>
+      <div class="exam-top">
+        <span class="badge b-warn"><span class="dot"></span>Closed-book · 5 questions</span>
+        <span class="timer" id="examTimer">10:00</span>
+      </div>
+      <div id="examQuestions"></div>
+      <button class="btn btn-primary" onclick="submitExam()">Submit exam</button>
+    </section>
+
+    <!-- 12 · My Result (Employee) -->
+    <section class="page" id="page-result">
+      <div class="page-head"><div class="crumb">Employee</div>
+        <h2>My Result</h2><p>Latest attempt and full history.</p></div>
+      <div class="card result-hero" id="resultHero"><div class="empty">No attempts yet — take an exam from “My SOP Allocations”.</div></div>
+      <div class="card"><h3>Attempt history</h3><div class="sub">All your exam attempts</div>
+        <div class="table-wrap"><table id="historyTable"></table></div></div>
+    </section>
+
+  </main>
+</div>
+<div id="tooltip"></div>
+
+<script>
+/* ══════════════════════════════ Demo data ══════════════════════════════ */
+const SOPS = [
+  { id: "SOP-RD-001", title: "Operation & Calibration of HPLC Systems", dept: "Analytical",    ver: "3.0", effective: "2026-06-01" },
+  { id: "SOP-RD-002", title: "Analytical Balance Calibration & Use",    dept: "Analytical",    ver: "2.1", effective: "2026-04-12" },
+  { id: "SOP-RD-003", title: "Good Documentation Practices (GDP)",      dept: "All",           ver: "4.0", effective: "2026-07-01" },
+  { id: "SOP-RD-004", title: "Stability Chamber Operation & Monitoring", dept: "Formulation",  ver: "1.2", effective: "2026-02-20" },
+  { id: "SOP-RD-005", title: "Handling of Deviations & CAPA",           dept: "Quality Assurance", ver: "2.0", effective: "2026-05-10" },
+  { id: "SOP-RD-006", title: "Preparation & Standardisation of Volumetric Solutions", dept: "Analytical", ver: "1.0", effective: "2026-03-01" },
+  { id: "SOP-RD-007", title: "Sample Management & Chain of Custody",    dept: "Bioanalytical", ver: "2.3", effective: "2026-06-15" },
+];
+
+const EMPLOYEES = [
+  { id: "RD-1042", name: "A. Sharma",  dept: "Analytical" },
+  { id: "RD-1044", name: "R. Iyer",    dept: "Formulation" },
+  { id: "RD-1051", name: "S. Khan",    dept: "Bioanalytical" },
+  { id: "RD-1057", name: "M. Verma",   dept: "Quality Assurance" },
+  { id: "RD-1060", name: "P. Nair",    dept: "Regulatory" },
+];
+const CURRENT_EMP = "RD-1042"; // demo: the logged-in employee
+
+/* Allocation status: completed | pending | overdue | retraining */
+let ALLOCATIONS = [
+  { emp: "RD-1042", sop: "SOP-RD-001", due: "2026-07-28", status: "pending",    score: null },
+  { emp: "RD-1042", sop: "SOP-RD-003", due: "2026-07-20", status: "overdue",    score: null },
+  { emp: "RD-1042", sop: "SOP-RD-002", due: "2026-07-10", status: "completed",  score: 100 },
+  { emp: "RD-1044", sop: "SOP-RD-004", due: "2026-07-30", status: "pending",    score: null },
+  { emp: "RD-1044", sop: "SOP-RD-003", due: "2026-07-25", status: "completed",  score: 80 },
+  { emp: "RD-1051", sop: "SOP-RD-007", due: "2026-07-18", status: "retraining", score: 60 },
+  { emp: "RD-1057", sop: "SOP-RD-005", due: "2026-08-02", status: "pending",    score: null },
+  { emp: "RD-1060", sop: "SOP-RD-003", due: "2026-07-15", status: "overdue",    score: null },
+];
+
+const QUESTIONS = {
+  "SOP-RD-001": [
+    { q: "Before starting an HPLC run, the mobile phase must be:", opts: ["Filtered and degassed", "Refrigerated overnight", "Autoclaved", "Diluted 1:10"], a: 0 },
+    { q: "System suitability must be performed:", opts: ["Once per year", "Before each analytical run", "Only after column change", "Only for stability samples"], a: 1 },
+    { q: "If pressure exceeds the column limit, the analyst should first:", opts: ["Increase flow rate", "Stop the pump and investigate", "Switch detectors", "Restart the software"], a: 1 },
+    { q: "HPLC calibration frequency per this SOP is:", opts: ["Monthly", "Quarterly", "Every 6 months", "As per calibration schedule"], a: 3 },
+    { q: "Wavelength accuracy is verified using:", opts: ["Caffeine standard", "Holmium oxide filter", "Distilled water", "Mobile phase blank"], a: 1 },
+    { q: "A failed system suitability requires:", opts: ["Proceeding with a note", "Investigation before sample analysis", "Averaging with the previous run", "Detector replacement"], a: 1 },
+  ],
+  "SOP-RD-002": [
+    { q: "Daily balance verification uses:", opts: ["Any object of known mass", "Certified check weights", "A tared beaker", "The previous day's reading"], a: 1 },
+    { q: "The balance must be levelled:", opts: ["Weekly", "Before each use, via the spirit level", "Only after relocation", "Never by the analyst"], a: 1 },
+    { q: "If daily verification fails, the analyst must:", opts: ["Repeat until it passes", "Tag the balance out of use and report", "Apply a correction factor", "Use a different SOP"], a: 1 },
+    { q: "Weighing records must be recorded:", opts: ["At the end of the day", "Contemporaneously", "From memory", "Weekly"], a: 1 },
+    { q: "Draft shields are required when weighing:", opts: ["Above 100 g", "Analytical quantities (mg range)", "Only volatile liquids", "Never"], a: 1 },
+  ],
+  "SOP-RD-003": [
+    { q: "An error in a raw-data entry is corrected by:", opts: ["Overwriting it", "Correction fluid", "Single line-through, initial and date", "Deleting the page"], a: 2 },
+    { q: "ALCOA requires data to be:", opts: ["Attributable, Legible, Contemporaneous, Original, Accurate", "Approved, Locked, Copied, Original, Audited", "Anonymous, Legible, Current, Open, Archived", "None of these"], a: 0 },
+    { q: "Blank spaces in a controlled record are:", opts: ["Left empty", "Struck through with N/A, initialled and dated", "Filled with dashes only", "Removed by QA"], a: 1 },
+    { q: "Recording a result before performing the activity is:", opts: ["Efficient", "A data-integrity violation", "Allowed with approval", "Standard practice"], a: 1 },
+    { q: "Controlled documents are issued by:", opts: ["Any analyst", "Document control / QA", "The vendor", "IT"], a: 1 },
+  ],
+  "SOP-RD-004": [
+    { q: "Stability chamber excursions must be reported within:", opts: ["24 hours", "Immediately upon detection", "One week", "At the next audit"], a: 1 },
+    { q: "Chamber temperature/RH mapping is performed:", opts: ["Never", "At qualification and re-qualification", "Daily", "Only after alarms"], a: 1 },
+    { q: "Samples are placed in the chamber:", opts: ["Anywhere convenient", "Per the approved loading plan", "Stacked against the sensor", "Blocking airflow"], a: 1 },
+    { q: "A power failure alarm requires:", opts: ["Ignoring if brief", "Logging and excursion assessment", "Restarting the chamber only", "Removing all samples"], a: 1 },
+    { q: "Long-term stability condition (zone IVb) is:", opts: ["25°C/60%RH", "30°C/75%RH", "40°C/75%RH", "5°C"], a: 1 },
+  ],
+  "SOP-RD-005": [
+    { q: "A deviation is first:", opts: ["Corrected silently", "Documented and reported to QA", "Discussed informally", "Ignored if minor"], a: 1 },
+    { q: "CAPA stands for:", opts: ["Corrective Action, Preventive Action", "Control And Process Assurance", "Compliance And Product Audit", "None"], a: 0 },
+    { q: "Root-cause analysis tools include:", opts: ["5-Why and fishbone", "Coin toss", "Seniority vote", "Retesting only"], a: 0 },
+    { q: "Deviation classification is based on:", opts: ["Analyst preference", "Impact on product quality and data", "Time of day", "Department size"], a: 1 },
+    { q: "CAPA effectiveness is verified:", opts: ["Never", "After a defined review period", "Immediately at closure", "Only by external auditors"], a: 1 },
+  ],
+  "SOP-RD-006": [
+    { q: "Volumetric solutions are standardised against:", opts: ["Tap water", "A primary standard", "A previous batch", "Estimated values"], a: 1 },
+    { q: "The validity period of a standardised solution is:", opts: ["Indefinite", "As defined in the SOP per solution", "One year always", "One day always"], a: 1 },
+    { q: "Standardisation is performed in:", opts: ["Single determination", "Triplicate", "Ten replicates", "Duplicate only if convenient"], a: 1 },
+    { q: "Solution labels must include:", opts: ["Name only", "Name, concentration, factor, date, analyst, validity", "A colour code only", "Batch number only"], a: 1 },
+    { q: "RSD limit for standardisation replicates is defined:", opts: ["Nowhere", "In this SOP", "By the analyst", "By the vendor"], a: 1 },
+  ],
+  "SOP-RD-007": [
+    { q: "Chain of custody documents:", opts: ["Sample ownership transfers", "Instrument usage", "Analyst holidays", "Reagent costs"], a: 0 },
+    { q: "Samples received are first:", opts: ["Frozen immediately", "Checked against the manifest and logged", "Analysed", "Stored anywhere"], a: 1 },
+    { q: "A damaged sample on receipt requires:", opts: ["Discarding silently", "Documenting and notifying the study director", "Repackaging quietly", "Analysis anyway"], a: 1 },
+    { q: "Sample storage conditions are defined by:", opts: ["Analyst preference", "The study plan / protocol", "Available freezer space", "IT"], a: 1 },
+    { q: "Aliquoting must be recorded:", opts: ["Optionally", "In the sample log contemporaneously", "At month end", "Never"], a: 1 },
+  ],
+};
+
+/* Dashboard demo series */
+const MONTHS   = ["Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+const ATTEMPTS = [34, 41, 38, 45, 44, 56];
+const PASSES   = [27, 33, 32, 39, 38, 50];
+const DEPTS = [
+  { name: "Analytical",        pass: 92, completed: 18, pending: 4, overdue: 1 },
+  { name: "Formulation",       pass: 88, completed: 14, pending: 5, overdue: 2 },
+  { name: "Bioanalytical",     pass: 84, completed: 11, pending: 3, overdue: 1 },
+  { name: "Quality Assurance", pass: 95, completed: 16, pending: 2, overdue: 0 },
+  { name: "Regulatory",        pass: 79, completed: 8,  pending: 4, overdue: 3 },
+];
+
+/* ══════════════════════════════ Navigation ══════════════════════════════ */
+const PAGES = [
+  { id: "register",     n: 1,  label: "Register",                      roles: ["employee"] },
+  { id: "login",        n: 2,  label: "Login",                         roles: ["employee", "admin"] },
+  { id: "library",      n: 3,  label: "SOP Library",                   roles: ["employee", "admin"] },
+  { id: "myalloc",      n: 4,  label: "My SOP Allocations",            roles: ["employee"] },
+  { id: "alloc",        n: 5,  label: "SOP Allocation (Admin)",        roles: ["admin"] },
+  { id: "retrain",      n: 6,  label: "Revision & Retraining Tracker", roles: ["admin"] },
+  { id: "qbank",        n: 7,  label: "Question Bank",                 roles: ["admin"] },
+  { id: "policies",     n: 8,  label: "HR Policies",                   roles: ["employee", "admin"] },
+  { id: "dashboard",    n: 9,  label: "Tracking Dashboard",            roles: ["admin"] },
+  { id: "instructions", n: 10, label: "Exam Instructions",             roles: ["employee"] },
+  { id: "exam",         n: 11, label: "Exam Screen",                   roles: ["employee"] },
+  { id: "result",       n: 12, label: "My Result",                     roles: ["employee"] },
+];
+
+let role = "employee";
+let current = "myalloc";
+
+function renderNav() {
+  const nav = document.getElementById("nav");
+  nav.innerHTML = "";
+  PAGES.filter(p => p.roles.includes(role)).forEach(p => {
+    const b = document.createElement("button");
+    b.className = "nav-item" + (p.id === current ? " active" : "");
+    b.innerHTML = `<span class="nav-num">${p.n}</span>${p.label}`;
+    b.onclick = () => show(p.id);
+    nav.appendChild(b);
+  });
+}
+
+function setRole(r) {
+  role = r;
+  document.getElementById("roleEmp").classList.toggle("active", r === "employee");
+  document.getElementById("roleAdm").classList.toggle("active", r === "admin");
+  const visible = PAGES.filter(p => p.roles.includes(r));
+  if (!visible.some(p => p.id === current)) current = r === "admin" ? "dashboard" : "myalloc";
+  show(current);
+}
+
+function show(id) {
+  current = id;
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("visible"));
+  document.getElementById("page-" + id).classList.add("visible");
+  renderNav();
+  const render = { library: renderLibrary, myalloc: renderMyAlloc, alloc: renderAlloc,
+                   retrain: renderRetrain, qbank: renderQBank, dashboard: renderDashboard,
+                   result: renderResult }[id];
+  if (render) render();
+  window.scrollTo(0, 0);
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const dark = root.getAttribute("data-theme") === "dark" ||
+    (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+  root.setAttribute("data-theme", dark ? "light" : "dark");
+  if (current === "dashboard") renderDashboard();
+}
+
+/* ══════════════════════════════ Helpers ══════════════════════════════ */
+const sopById = id => SOPS.find(s => s.id === id);
+const empById = id => EMPLOYEES.find(e => e.id === id);
+
+function statusBadge(a) {
+  const map = {
+    completed:  ["b-good",  "✓ Completed"],
+    pending:    ["b-warn",  "Pending"],
+    overdue:    ["b-crit",  "▲ Overdue"],
+    retraining: ["b-serious", "Retraining"],
+  };
+  const [cls, label] = map[a.status];
+  return `<span class="badge ${cls}"><span class="dot"></span>${label}</span>`;
+}
+
+/* ══════════════════════════════ Pages ══════════════════════════════ */
+function renderLibrary() {
+  const t = document.getElementById("libTable");
+  t.innerHTML = `<tr><th>SOP No.</th><th>Title</th><th>Department</th><th class="num">Version</th><th>Effective</th></tr>` +
+    SOPS.map(s => `<tr><td>${s.id}</td><td>${s.title}</td><td>${s.dept}</td><td class="num">${s.ver}</td><td>${s.effective}</td></tr>`).join("");
+}
+
+function renderMyAlloc() {
+  const mine = ALLOCATIONS.filter(a => a.emp === CURRENT_EMP);
+  const t = document.getElementById("myAllocTable");
+  if (!mine.length) { t.innerHTML = `<tr><td class="empty">No SOPs allocated to you yet.</td></tr>`; return; }
+  t.innerHTML = `<tr><th>SOP</th><th>Title</th><th>Due date</th><th>Status</th><th class="num">Score</th><th></th></tr>` +
+    mine.map(a => {
+      const s = sopById(a.sop);
+      const actionable = a.status === "pending" || a.status === "overdue" || a.status === "retraining";
+      const btn = actionable
+        ? `<button class="btn btn-primary btn-sm" onclick="openInstructions('${a.sop}')">Take Exam</button>`
+        : `<button class="btn btn-sm" onclick="show('result')">View result</button>`;
+      return `<tr><td>${s.id}</td><td>${s.title}</td><td>${a.due}</td><td>${statusBadge(a)}</td>
+        <td class="num">${a.score == null ? "—" : a.score + "%"}</td><td>${btn}</td></tr>`;
+    }).join("");
+}
+
+function renderAlloc() {
+  const empSel = document.getElementById("allocEmp");
+  const sopSel = document.getElementById("allocSop");
+  empSel.innerHTML = EMPLOYEES.map(e => `<option value="${e.id}">${e.name} (${e.id}, ${e.dept})</option>`).join("");
+  sopSel.innerHTML = SOPS.map(s => `<option value="${s.id}">${s.id} — ${s.title}</option>`).join("");
+  const t = document.getElementById("allocTable");
+  t.innerHTML = `<tr><th>Employee</th><th>SOP</th><th>Due date</th><th>Status</th><th class="num">Score</th></tr>` +
+    ALLOCATIONS.map(a => {
+      const e = empById(a.emp), s = sopById(a.sop);
+      return `<tr><td>${e.name} <span style="color:var(--text-muted)">(${e.id})</span></td>
+        <td>${s.id} — ${s.title}</td><td>${a.due}</td><td>${statusBadge(a)}</td>
+        <td class="num">${a.score == null ? "—" : a.score + "%"}</td></tr>`;
+    }).join("");
+}
+
+function doAllocate() {
+  const emp = document.getElementById("allocEmp").value;
+  const sop = document.getElementById("allocSop").value;
+  const due = document.getElementById("allocDue").value.trim() || "2026-08-15";
+  ALLOCATIONS.push({ emp, sop, due, status: "pending", score: null });
+  document.getElementById("allocMsg").textContent = `Allocated ${sop} to ${empById(emp).name}, due ${due}.`;
+  renderAlloc();
+}
+
+function renderRetrain() {
+  const items = ALLOCATIONS.filter(a => a.status === "retraining" || a.status === "overdue")
+    .sort((x, y) => x.due.localeCompare(y.due));
+  const t = document.getElementById("retrainTable");
+  if (!items.length) { t.innerHTML = `<tr><td class="empty">No open retraining items. 🎉</td></tr>`; return; }
+  t.innerHTML = `<tr><th>Employee</th><th>SOP</th><th>Reason</th><th>Due date</th><th>Status</th></tr>` +
+    items.map(a => {
+      const e = empById(a.emp), s = sopById(a.sop);
+      const reason = a.status === "retraining" ? `Failed exam (${a.score}%)` : "Exam not taken by due date";
+      return `<tr><td>${e.name} <span style="color:var(--text-muted)">(${e.id})</span></td>
+        <td>${s.id} — ${s.title}</td><td>${reason}</td><td>${a.due}</td><td>${statusBadge(a)}</td></tr>`;
+    }).join("");
+}
+
+function renderQBank() {
+  const sel = document.getElementById("qbankFilter");
+  if (!sel.options.length)
+    sel.innerHTML = SOPS.map(s => `<option value="${s.id}">${s.id} — ${s.title}</option>`).join("");
+  const sop = sel.value || SOPS[0].id;
+  const qs = QUESTIONS[sop] || [];
+  const t = document.getElementById("qbankTable");
+  t.innerHTML = `<tr><th style="width:36px">#</th><th>Question</th><th>Correct answer</th></tr>` +
+    qs.map((q, i) => `<tr><td class="num">${i + 1}</td><td>${q.q}</td><td>${q.opts[q.a]}</td></tr>`).join("");
+}
+
+/* ══════════════════════════════ Auth (demo) ══════════════════════════════ */
+function doRegister() {
+  const name = document.getElementById("regName").value.trim();
+  const id = document.getElementById("regEmpId").value.trim();
+  document.getElementById("regMsg").textContent = name && id
+    ? `Registration submitted for ${name} (${id}). HR will approve your account shortly.`
+    : "Please fill in your name and employee ID.";
+}
+function loginTab(which) {
+  document.getElementById("loginTabEmp").classList.toggle("active", which === "emp");
+  document.getElementById("loginTabAdm").classList.toggle("active", which === "adm");
+}
+function doLogin() {
+  const u = document.getElementById("loginUser").value.trim();
+  const adm = document.getElementById("loginTabAdm").classList.contains("active");
+  if (!u) { document.getElementById("loginMsg").textContent = "Enter your email or employee ID."; return; }
+  document.getElementById("loginMsg").textContent = `Signed in as ${u} (demo).`;
+  setRole(adm ? "admin" : "employee");
+}
+
+/* ══════════════════════════════ Exam engine ══════════════════════════════ */
+const PASS_MARK = 80, EXAM_SECONDS = 600, EXAM_QUESTIONS = 5;
+let examSop = null, examSet = [], examTimerId = null, examRemaining = 0;
+let attempts = []; // { sop, date, score, pass }
+
+function openInstructions(sopId) {
+  examSop = sopId;
+  const s = sopById(sopId);
+  document.getElementById("instrSop").textContent = `${s.id} — ${s.title} (v${s.ver})`;
+  document.getElementById("startExamBtn").disabled = false;
+  show("instructions");
+}
+
+function startExam() {
+  if (!examSop) return;
+  const pool = [...(QUESTIONS[examSop] || [])].sort(() => Math.random() - 0.5);
+  examSet = pool.slice(0, EXAM_QUESTIONS);
+  const s = sopById(examSop);
+  document.getElementById("examTitle").textContent = `Exam — ${s.id}: ${s.title}`;
+  document.getElementById("examQuestions").innerHTML = examSet.map((q, i) => `
+    <div class="card q-card">
+      <div class="q">Q${i + 1}. ${q.q}</div>
+      ${q.opts.map((o, j) => `
+        <label class="opt"><input type="radio" name="q${i}" value="${j}"><span>${o}</span></label>`).join("")}
+    </div>`).join("");
+  examRemaining = EXAM_SECONDS;
+  clearInterval(examTimerId);
+  tick();
+  examTimerId = setInterval(tick, 1000);
+  show("exam");
+}
+
+function tick() {
+  const el = document.getElementById("examTimer");
+  const m = Math.floor(examRemaining / 60), s = examRemaining % 60;
+  el.textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  el.classList.toggle("low", examRemaining <= 60);
+  if (examRemaining <= 0) { submitExam(true); return; }
+  examRemaining--;
+}
+
+function submitExam(auto = false) {
+  clearInterval(examTimerId);
+  let correct = 0;
+  examSet.forEach((q, i) => {
+    const sel = document.querySelector(`input[name=q${i}]:checked`);
+    if (sel && Number(sel.value) === q.a) correct++;
+  });
+  const score = Math.round((correct / examSet.length) * 100);
+  const pass = score >= PASS_MARK;
+  attempts.unshift({ sop: examSop, date: "2026-07-24", score, pass, auto });
+  const alloc = ALLOCATIONS.find(a => a.emp === CURRENT_EMP && a.sop === examSop);
+  if (alloc) { alloc.score = score; alloc.status = pass ? "completed" : "retraining"; }
+  examSop = null;
+  document.getElementById("startExamBtn").disabled = true;
+  show("result");
+}
+
+function renderResult() {
+  const hero = document.getElementById("resultHero");
+  const t = document.getElementById("historyTable");
+  if (!attempts.length) {
+    hero.innerHTML = `<div class="empty">No attempts yet — take an exam from “My SOP Allocations”.</div>`;
+    t.innerHTML = `<tr><td class="empty">No attempts recorded.</td></tr>`;
+    return;
+  }
+  const last = attempts[0];
+  const s = sopById(last.sop);
+  hero.innerHTML = `
+    <div class="score">${last.score}%</div>
+    <div class="verdict ${last.pass ? "pass" : "fail"}">${last.pass ? "PASS ✓" : "FAIL — retraining allocated"}</div>
+    <p>${s.id} — ${s.title}${last.auto ? " · auto-submitted at time-out" : ""}</p>
+    <p style="margin-top:14px"><button class="btn" onclick="show('myalloc')">Back to My Allocations</button></p>`;
+  t.innerHTML = `<tr><th>Date</th><th>SOP</th><th class="num">Score</th><th>Outcome</th></tr>` +
+    attempts.map(a => {
+      const so = sopById(a.sop);
+      return `<tr><td>${a.date}</td><td>${so.id} — ${so.title}</td><td class="num">${a.score}%</td>
+        <td><span class="badge ${a.pass ? "b-good" : "b-crit"}"><span class="dot"></span>${a.pass ? "✓ Pass" : "▲ Fail"}</span></td></tr>`;
+    }).join("");
+}
+
+/* ══════════════════════════════ Dashboard charts ══════════════════════════════ */
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const tooltip = document.getElementById("tooltip");
+function tipShow(evt, html) {
+  tooltip.innerHTML = html;
+  tooltip.style.display = "block";
+  tipMove(evt);
+}
+function tipMove(evt) {
+  const pad = 14;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  const r = tooltip.getBoundingClientRect();
+  if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = evt.clientY - r.height - pad;
+  tooltip.style.left = x + "px"; tooltip.style.top = y + "px";
+}
+function tipHide() { tooltip.style.display = "none"; }
+
+function renderDashboard() {
+  const totalAlloc = DEPTS.reduce((n, d) => n + d.completed + d.pending + d.overdue, 0);
+  const done = DEPTS.reduce((n, d) => n + d.completed, 0);
+  const overdue = DEPTS.reduce((n, d) => n + d.overdue, 0);
+  document.getElementById("statCompliance").textContent = Math.round((done / totalAlloc) * 100) + "%";
+  document.getElementById("statSops").textContent = SOPS.length;
+  document.getElementById("statExams").textContent = ATTEMPTS[ATTEMPTS.length - 1];
+  document.getElementById("statOverdue").textContent = overdue;
+  drawLineChart();
+  drawBarChart();
+  drawStackChart();
+  drawDashTable();
+}
+
+function drawLineChart() {
+  const W = 520, H = 240, m = { t: 16, r: 66, b: 28, l: 40 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const maxY = 60;
+  const x = i => m.l + (i / (MONTHS.length - 1)) * iw;
+  const y = v => m.t + ih - (v / maxY) * ih;
+  const grid = cssVar("--grid"), muted = cssVar("--text-muted"), base = cssVar("--baseline");
+  const surface = cssVar("--surface-1"), c1 = cssVar("--series-1"), c2 = cssVar("--series-2");
+  const ink = cssVar("--text-secondary");
+  const path = data => data.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Exam attempts versus passes, last six months">`;
+  for (const gv of [0, 20, 40, 60]) {
+    svg += `<line x1="${m.l}" y1="${y(gv)}" x2="${W - m.r}" y2="${y(gv)}" stroke="${gv === 0 ? base : grid}" stroke-width="1"/>`;
+    svg += `<text x="${m.l - 8}" y="${y(gv) + 4}" text-anchor="end" font-size="10" fill="${muted}" style="font-variant-numeric:tabular-nums">${gv}</text>`;
+  }
+  MONTHS.forEach((mo, i) =>
+    svg += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="${muted}">${mo}</text>`);
+  svg += `<path d="${path(ATTEMPTS)}" fill="none" stroke="${c1}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  svg += `<path d="${path(PASSES)}" fill="none" stroke="${c2}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  [[ATTEMPTS, c1, "Attempts"], [PASSES, c2, "Passes"]].forEach(([data, c, name]) => {
+    const lx = x(MONTHS.length - 1), ly = y(data[data.length - 1]);
+    svg += `<circle cx="${lx}" cy="${ly}" r="4" fill="${c}" stroke="${surface}" stroke-width="2"/>`;
+    svg += `<text x="${lx + 10}" y="${ly + 4}" font-size="11" font-weight="600" fill="${ink}">${name}</text>`;
+    data.forEach((v, i) => {
+      svg += `<circle cx="${x(i)}" cy="${y(v)}" r="10" fill="transparent" class="hit" data-tip="<b>${MONTHS[i]} 2026</b>${name}: ${v}"/>`;
+    });
+  });
+  svg += `</svg>`;
+  mountChart("chartLine", svg);
+}
+
+function drawBarChart() {
+  const W = 520, H = 240, m = { t: 16, r: 16, b: 44, l: 40 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const maxY = 100;
+  const grid = cssVar("--grid"), muted = cssVar("--text-muted"), base = cssVar("--baseline");
+  const c1 = cssVar("--series-1"), ink = cssVar("--text-secondary");
+  const band = iw / DEPTS.length, bw = Math.min(24, band * 0.5);
+  const y = v => m.t + ih - (v / maxY) * ih;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Pass rate by department, month to date">`;
+  for (const gv of [0, 25, 50, 75, 100]) {
+    svg += `<line x1="${m.l}" y1="${y(gv)}" x2="${W - m.r}" y2="${y(gv)}" stroke="${gv === 0 ? base : grid}" stroke-width="1"/>`;
+    svg += `<text x="${m.l - 8}" y="${y(gv) + 4}" text-anchor="end" font-size="10" fill="${muted}" style="font-variant-numeric:tabular-nums">${gv}</text>`;
+  }
+  DEPTS.forEach((d, i) => {
+    const cx = m.l + band * i + band / 2;
+    const top = y(d.pass), h = m.t + ih - top;
+    const r = Math.min(4, h);
+    svg += `<path d="M${cx - bw / 2},${m.t + ih} v${-(h - r)} q0,${-r} ${r},${-r} h${bw - 2 * r} q${r},0 ${r},${r} v${h - r} z" fill="${c1}"/>`;
+    svg += `<text x="${cx}" y="${top - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="${ink}">${d.pass}%</text>`;
+    const short = d.name === "Quality Assurance" ? "QA" : d.name;
+    svg += `<text x="${cx}" y="${H - 26}" text-anchor="middle" font-size="10" fill="${muted}">${short}</text>`;
+    svg += `<rect x="${m.l + band * i}" y="${m.t}" width="${band}" height="${ih}" fill="transparent" class="hit" data-tip="<b>${d.name}</b>Pass rate: ${d.pass}%"/>`;
+  });
+  svg += `</svg>`;
+  mountChart("chartBars", svg);
+}
+
+function drawStackChart() {
+  const W = 1040, H = 34 * DEPTS.length + 30, m = { t: 6, r: 40, b: 20, l: 130 };
+  const iw = W - m.l - m.r;
+  const muted = cssVar("--text-muted"), ink = cssVar("--text-secondary");
+  const surface = cssVar("--surface-1");
+  const cols = [cssVar("--status-good"), cssVar("--status-warning"), cssVar("--status-critical")];
+  const names = ["Completed", "Pending", "Overdue"];
+  const maxTotal = Math.max(...DEPTS.map(d => d.completed + d.pending + d.overdue));
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Allocation status by department">`;
+  DEPTS.forEach((d, i) => {
+    const yRow = m.t + i * 34, bh = 18;
+    const vals = [d.completed, d.pending, d.overdue];
+    const total = vals.reduce((a, b) => a + b, 0);
+    svg += `<text x="${m.l - 10}" y="${yRow + bh / 2 + 4}" text-anchor="end" font-size="11" fill="${ink}">${d.name}</text>`;
+    let xCur = m.l;
+    vals.forEach((v, j) => {
+      if (!v) return;
+      const w = (v / maxTotal) * iw;
+      svg += `<rect x="${xCur}" y="${yRow}" width="${Math.max(w - 2, 1)}" height="${bh}" rx="3" fill="${cols[j]}" stroke="${surface}" stroke-width="0"/>`;
+      svg += `<rect x="${xCur}" y="${yRow}" width="${Math.max(w, 6)}" height="${bh}" fill="transparent" class="hit" data-tip="<b>${d.name}</b>${names[j]}: ${v} allocation${v > 1 ? "s" : ""}"/>`;
+      xCur += w;
+    });
+    svg += `<text x="${xCur + 8}" y="${yRow + bh / 2 + 4}" font-size="11" fill="${muted}" style="font-variant-numeric:tabular-nums">${total}</text>`;
+  });
+  svg += `</svg>`;
+  mountChart("chartStack", svg);
+}
+
+function drawDashTable() {
+  const t = document.getElementById("dashTable");
+  t.innerHTML = `<tr><th>Department</th><th class="num">Pass rate</th><th class="num">Completed</th><th class="num">Pending</th><th class="num">Overdue</th><th class="num">Total</th></tr>` +
+    DEPTS.map(d => `<tr><td>${d.name}</td><td class="num">${d.pass}%</td><td class="num">${d.completed}</td>
+      <td class="num">${d.pending}</td><td class="num">${d.overdue}</td>
+      <td class="num">${d.completed + d.pending + d.overdue}</td></tr>`).join("");
+}
+
+function mountChart(id, svgMarkup) {
+  const box = document.getElementById(id);
+  box.innerHTML = svgMarkup;
+  box.querySelectorAll(".hit").forEach(el => {
+    el.addEventListener("mouseenter", e => tipShow(e, el.dataset.tip));
+    el.addEventListener("mousemove", tipMove);
+    el.addEventListener("mouseleave", tipHide);
+  });
+}
+
+/* ══════════════════════════════ Boot ══════════════════════════════ */
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (current === "dashboard") renderDashboard();
+});
+setRole("employee");
+</script>
+</body>
+</html>
