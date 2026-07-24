@@ -265,6 +265,7 @@
 
     <div class="sidebar-foot">
       <button class="theme-btn" onclick="toggleTheme()">Toggle light / dark</button>
+      <button class="theme-btn" style="margin-top:6px" onclick="resetDemoData()">Reset demo data</button>
     </div>
   </aside>
 
@@ -555,6 +556,37 @@ const DEPTS = [
   { name: "Regulatory",        pass: 79, completed: 8,  pending: 4, overdue: 3 },
 ];
 
+/* ══════════════════════════════ Persistence (localStorage) ══════════════════════════════ */
+const STORE_KEY = "sop-exam-portal-v1";
+const THEME_KEY = "sop-exam-portal-theme";
+let REGISTRATIONS = [];
+
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      allocations: ALLOCATIONS,
+      attempts,
+      registrations: REGISTRATIONS,
+    }));
+  } catch (e) { /* storage full or blocked — keep running in-memory */ }
+}
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (!s) return;
+    if (Array.isArray(s.allocations)) ALLOCATIONS = s.allocations;
+    if (Array.isArray(s.attempts)) attempts = s.attempts;
+    if (Array.isArray(s.registrations)) REGISTRATIONS = s.registrations;
+  } catch (e) { /* corrupt store — fall back to seed data */ }
+}
+
+function resetDemoData() {
+  if (!confirm("Reset all demo data (allocations, exam attempts, registrations)?")) return;
+  localStorage.removeItem(STORE_KEY);
+  location.reload();
+}
+
 /* ══════════════════════════════ Navigation ══════════════════════════════ */
 const PAGES = [
   { id: "register",     n: 1,  label: "Register",                      roles: ["employee"] },
@@ -611,7 +643,9 @@ function toggleTheme() {
   const root = document.documentElement;
   const dark = root.getAttribute("data-theme") === "dark" ||
     (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
-  root.setAttribute("data-theme", dark ? "light" : "dark");
+  const next = dark ? "light" : "dark";
+  root.setAttribute("data-theme", next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
   if (current === "dashboard") renderDashboard();
 }
 
@@ -673,6 +707,7 @@ function doAllocate() {
   const sop = document.getElementById("allocSop").value;
   const due = document.getElementById("allocDue").value.trim() || "2026-08-15";
   ALLOCATIONS.push({ emp, sop, due, status: "pending", score: null });
+  saveState();
   document.getElementById("allocMsg").textContent = `Allocated ${sop} to ${empById(emp).name}, due ${due}.`;
   renderAlloc();
 }
@@ -706,9 +741,20 @@ function renderQBank() {
 function doRegister() {
   const name = document.getElementById("regName").value.trim();
   const id = document.getElementById("regEmpId").value.trim();
-  document.getElementById("regMsg").textContent = name && id
-    ? `Registration submitted for ${name} (${id}). HR will approve your account shortly.`
-    : "Please fill in your name and employee ID.";
+  if (!name || !id) {
+    document.getElementById("regMsg").textContent = "Please fill in your name and employee ID.";
+    return;
+  }
+  REGISTRATIONS.push({
+    name, id,
+    email: document.getElementById("regEmail").value.trim(),
+    dept: document.getElementById("regDept").value,
+    submitted: new Date().toISOString().slice(0, 10),
+    status: "awaiting HR approval",
+  });
+  saveState();
+  document.getElementById("regMsg").textContent =
+    `Registration submitted for ${name} (${id}). HR will approve your account shortly.`;
 }
 function loginTab(which) {
   document.getElementById("loginTabEmp").classList.toggle("active", which === "emp");
@@ -772,9 +818,10 @@ function submitExam(auto = false) {
   });
   const score = Math.round((correct / examSet.length) * 100);
   const pass = score >= PASS_MARK;
-  attempts.unshift({ sop: examSop, date: "2026-07-24", score, pass, auto });
+  attempts.unshift({ sop: examSop, date: new Date().toISOString().slice(0, 10), score, pass, auto });
   const alloc = ALLOCATIONS.find(a => a.emp === CURRENT_EMP && a.sop === examSop);
   if (alloc) { alloc.score = score; alloc.status = pass ? "completed" : "retraining"; }
+  saveState();
   examSop = null;
   document.getElementById("startExamBtn").disabled = true;
   show("result");
@@ -946,6 +993,11 @@ function mountChart(id, svgMarkup) {
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
   if (current === "dashboard") renderDashboard();
 });
+try {
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+} catch (e) {}
+loadState();
 setRole("employee");
 </script>
 </body>
