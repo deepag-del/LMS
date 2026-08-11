@@ -2,7 +2,7 @@
 
 Exam management system for SOP compliance at a pharma R&D company (~200 employees), built to FDA/EMA-style audit-readiness expectations: immutable audit trail, controlled question-bank workflow, verifiable certificates.
 
-Built module by module — see the plan and locked business rules in the project brief. **Current status: Module 3 (roles & access) complete.**
+Built module by module — see the plan and locked business rules in the project brief. **Current status: Module 4 (question bank & approval) complete.**
 
 ## Stack (and why)
 
@@ -57,7 +57,7 @@ Follow `docs/module-1-e2e-runbook.md` — it covers the E2E Networks VM, DBaaS P
 1. ✅ Environment & infrastructure — E2E VM, DBaaS, email (`docs/module-1-e2e-runbook.md`)
 2. ✅ Data foundation — Excel import, departments, holidays, new-hire webhook (`docs/module-2-data-foundation.md`)
 3. ✅ Roles & access — login, sessions, six-role permissions (`docs/module-3-roles-access.md`)
-4. Question bank & approval workflow (SOP-tagged, C-level approval)
+4. ✅ Question bank & approval — SOP-tagged, C-level approval, retire-and-replace (`docs/module-4-question-bank.md`)
 5. Selection engine — 2 exams/employee/year, exclusion-after-pass, fresh question sets
 6. Exam engine — 30 min server-side timer, 5 randomized questions, session lock
 7. Retest scheduler — 7 days out, weekdays only, holiday-aware, slot picker

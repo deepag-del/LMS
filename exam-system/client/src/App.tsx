@@ -6,15 +6,17 @@ import StatusPage from "./pages/StatusPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import HolidaysPage from "./pages/HolidaysPage";
 import UsersPage from "./pages/UsersPage";
+import QuestionsPage from "./pages/QuestionsPage";
 
-type Tab = "Employees" | "Holidays" | "Users" | "System status" | "My exams";
+type Tab = "Employees" | "Holidays" | "Users" | "Question bank" | "System status" | "My exams";
 
 function tabsForRole(role: User["role"]): Tab[] {
   switch (role) {
-    case "hr_admin": return ["Employees", "Holidays", "Users", "System status"];
-    case "qa":       return ["Employees", "Holidays", "Users", "System status"];
-    case "c_level":  return ["Employees", "Holidays"];
-    default:          return ["My exams", "Holidays"];
+    case "hr_admin":     return ["Employees", "Holidays", "Users", "Question bank", "System status"];
+    case "qa":           return ["Employees", "Holidays", "Users", "Question bank", "System status"];
+    case "c_level":      return ["Question bank", "Employees", "Holidays"];
+    case "dept_manager": return ["Question bank", "My exams", "Holidays"];
+    default:              return ["My exams", "Holidays"];
   }
 }
 
@@ -70,6 +72,7 @@ export default function App() {
       {active === "Employees" && <EmployeesPage readOnly={readOnly || user.role === "c_level"} />}
       {active === "Holidays" && <HolidaysPage readOnly={user.role !== "hr_admin"} />}
       {active === "Users" && <UsersPage me={user} readOnly={readOnly} />}
+      {active === "Question bank" && <QuestionsPage me={user} />}
       {active === "System status" && <StatusPage />}
       {active === "My exams" && (
         <div className="panel">

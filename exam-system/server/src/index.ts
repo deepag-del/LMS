@@ -8,6 +8,7 @@ import { departments } from "./routes/departments";
 import { employees } from "./routes/employees";
 import { holidays } from "./routes/holidays";
 import { users } from "./routes/users";
+import { questions } from "./routes/questions";
 
 const app = express();
 app.set("trust proxy", 1); // behind Nginx: report the real client IP in sessions/audit
@@ -26,6 +27,9 @@ app.use(sessionGate, departments);
 app.use(sessionGate, employees);
 app.use(sessionGate, holidays);
 app.use(sessionGate, users);
+
+// ---- Module 4: question bank & approval workflow ----
+app.use(sessionGate, questions);
 
 // ---- Module 1: health endpoints (used to verify the E2E VM, DBaaS and email are wired up) ----
 
