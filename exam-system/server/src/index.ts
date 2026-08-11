@@ -1,18 +1,31 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { config } from "./config";
 import { checkDb } from "./db";
 import { checkEmail, sendMail } from "./mailer";
+import { requireAuth } from "./lib/auth";
+import { auth } from "./routes/auth";
 import { departments } from "./routes/departments";
 import { employees } from "./routes/employees";
 import { holidays } from "./routes/holidays";
+import { users } from "./routes/users";
 
 const app = express();
+app.set("trust proxy", 1); // behind Nginx: report the real client IP in sessions/audit
 app.use(express.json());
 
-// ---- Module 2: data foundation ----
-app.use(departments);
-app.use(employees);
-app.use(holidays);
+// ---- Module 3: authentication (login/logout/me are public or self-guarded) ----
+app.use(auth);
+
+// Every business route below requires a signed-in session, except the HR
+// webhook, which authenticates with its own shared secret instead.
+const sessionGate = (req: Request, res: Response, next: NextFunction) =>
+  req.path === "/api/admin/employees/webhook" ? next() : requireAuth(req, res, next);
+
+// ---- Modules 2-3: data foundation + user management (role checks inside routes) ----
+app.use(sessionGate, departments);
+app.use(sessionGate, employees);
+app.use(sessionGate, holidays);
+app.use(sessionGate, users);
 
 // ---- Module 1: health endpoints (used to verify the E2E VM, DBaaS and email are wired up) ----
 

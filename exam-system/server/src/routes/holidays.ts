@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { audit } from "../lib/audit";
+import { requireRole } from "../lib/auth";
 
 export const holidays = Router();
 
@@ -15,7 +16,7 @@ holidays.get("/api/holidays", async (req, res) => {
   res.json(r.rows);
 });
 
-holidays.post("/api/holidays", async (req, res) => {
+holidays.post("/api/holidays", requireRole("hr_admin"), async (req, res) => {
   const { date, name } = req.body ?? {};
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? "") || !name?.trim()) {
     return res.status(400).json({ ok: false, detail: "Provide {date: 'YYYY-MM-DD', name: '…'}" });
@@ -35,7 +36,7 @@ holidays.post("/api/holidays", async (req, res) => {
   }
 });
 
-holidays.delete("/api/holidays/:id", async (req, res) => {
+holidays.delete("/api/holidays/:id", requireRole("hr_admin"), async (req, res) => {
   const r = await pool!.query(
     "DELETE FROM holidays WHERE id = $1 RETURNING holiday_date::text, name",
     [req.params.id]

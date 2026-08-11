@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 type Holiday = { id: number; holiday_date: string; name: string };
 
-export default function HolidaysPage() {
+export default function HolidaysPage({ readOnly = false }: { readOnly?: boolean }) {
   const [rows, setRows] = useState<Holiday[]>([]);
   const [date, setDate] = useState("");
   const [name, setName] = useState("");
@@ -42,16 +42,18 @@ export default function HolidaysPage() {
           Retest auto-scheduling (Module 7) skips Saturdays, Sundays, and every date listed here.
           Fixed national holidays are pre-seeded; add festival dates (Holi, Diwali…) each year.
         </p>
-        <div className="row">
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-          <input
-            type="text"
-            placeholder="Holiday name"
-            value={name}
-            onChange={e => setName(e.target.value)}
-          />
-          <button disabled={!date || !name.trim()} onClick={add}>Add holiday</button>
-        </div>
+        {!readOnly && (
+          <div className="row">
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Holiday name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
+            <button disabled={!date || !name.trim()} onClick={add}>Add holiday</button>
+          </div>
+        )}
         {error && <p className="fail">{error}</p>}
         <div className="tablewrap">
           <table>
@@ -63,7 +65,7 @@ export default function HolidaysPage() {
                 <tr key={h.id}>
                   <td>{h.holiday_date}</td>
                   <td>{h.name}</td>
-                  <td><button className="link" onClick={() => remove(h.id)}>remove</button></td>
+                  <td>{!readOnly && <button className="link" onClick={() => remove(h.id)}>remove</button>}</td>
                 </tr>
               ))}
               {rows.length === 0 && <tr><td colSpan={3} className="dim">No holidays configured.</td></tr>}

@@ -1,27 +1,83 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ROLE_LABELS, User } from "./auth";
+import LoginPage from "./pages/LoginPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import StatusPage from "./pages/StatusPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import HolidaysPage from "./pages/HolidaysPage";
+import UsersPage from "./pages/UsersPage";
 
-const TABS = ["Employees", "Holidays", "System status"] as const;
-type Tab = (typeof TABS)[number];
+type Tab = "Employees" | "Holidays" | "Users" | "System status" | "My exams";
+
+function tabsForRole(role: User["role"]): Tab[] {
+  switch (role) {
+    case "hr_admin": return ["Employees", "Holidays", "Users", "System status"];
+    case "qa":       return ["Employees", "Holidays", "Users", "System status"];
+    case "c_level":  return ["Employees", "Holidays"];
+    default:          return ["My exams", "Holidays"];
+  }
+}
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("Employees");
+  const [user, setUser] = useState<User | null | undefined>(undefined); // undefined = loading
+  const [tab, setTab] = useState<Tab | null>(null);
+
+  const refresh = useCallback(() => {
+    fetch("/api/me")
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then(b => {
+        setUser(b.user);
+        setTab(t => t ?? tabsForRole(b.user.role)[0]);
+      })
+      .catch(() => setUser(null));
+  }, []);
+  useEffect(refresh, [refresh]);
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    setTab(null);
+  }
+
+  if (user === undefined) return <main><p className="pending">Loading…</p></main>;
+  if (user === null) return <main><LoginPage onLoggedIn={refresh} /></main>;
+  if (user.mustChangePassword) {
+    return <main><ChangePasswordPage onChanged={() => { setUser(null); setTab(null); }} /></main>;
+  }
+
+  const tabs = tabsForRole(user.role);
+  const active = tab && tabs.includes(tab) ? tab : tabs[0];
+  const readOnly = user.role === "qa";
+
   return (
     <main>
-      <h1>SOP Compliance Exam Management System</h1>
-      <p className="sub">Morepen R&amp;D · Module 2 — data foundation (login &amp; roles arrive in Module 3)</p>
+      <header className="row spread">
+        <div>
+          <h1>SOP Compliance Exam Management System</h1>
+          <p className="sub">
+            {user.fullName} · {ROLE_LABELS[user.role]}{readOnly && " · read-only"}
+          </p>
+        </div>
+        <button className="ghost" onClick={logout}>Sign out</button>
+      </header>
       <nav className="tabs">
-        {TABS.map(t => (
-          <button key={t} className={t === tab ? "active" : ""} onClick={() => setTab(t)}>
+        {tabs.map(t => (
+          <button key={t} className={t === active ? "active" : ""} onClick={() => setTab(t)}>
             {t}
           </button>
         ))}
       </nav>
-      {tab === "Employees" && <EmployeesPage />}
-      {tab === "Holidays" && <HolidaysPage />}
-      {tab === "System status" && <StatusPage />}
+      {active === "Employees" && <EmployeesPage readOnly={readOnly || user.role === "c_level"} />}
+      {active === "Holidays" && <HolidaysPage readOnly={user.role !== "hr_admin"} />}
+      {active === "Users" && <UsersPage me={user} readOnly={readOnly} />}
+      {active === "System status" && <StatusPage />}
+      {active === "My exams" && (
+        <div className="panel">
+          <h2>My exams</h2>
+          <p className="hint">Your assigned exams, results, and certificates will appear here
+            once the selection and exam engines go live (Modules 5–6).</p>
+        </div>
+      )}
     </main>
   );
 }

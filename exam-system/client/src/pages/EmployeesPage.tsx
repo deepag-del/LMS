@@ -27,7 +27,7 @@ type ImportSummary = {
   errors: { rowNumber: number; message: string }[];
 };
 
-export default function EmployeesPage() {
+export default function EmployeesPage({ readOnly = false }: { readOnly?: boolean }) {
   const [depts, setDepts] = useState<Dept[]>([]);
   const [deptFilter, setDeptFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
@@ -65,7 +65,7 @@ export default function EmployeesPage() {
 
   return (
     <section>
-      <div className="panel">
+      {!readOnly && <div className="panel">
         <h2>Import roster (.xlsx)</h2>
         <p className="hint">
           Columns: Employee Code, Name, Email, Department, Designation, Manager Email, Date of
@@ -101,7 +101,7 @@ export default function EmployeesPage() {
             )}
           </div>
         )}
-      </div>
+      </div>}
 
       <div className="panel">
         <div className="row spread">

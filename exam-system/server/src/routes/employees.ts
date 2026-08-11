@@ -3,6 +3,7 @@ import multer from "multer";
 import { PoolClient } from "pg";
 import { pool } from "../db";
 import { audit } from "../lib/audit";
+import { requireRole } from "../lib/auth";
 import { parseRoster, RosterRow } from "../lib/roster";
 
 export const employees = Router();
@@ -12,7 +13,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // a 200-person roster is well under 5 MB
 });
 
-employees.get("/api/employees", async (req, res) => {
+employees.get("/api/employees", requireRole("hr_admin", "qa", "c_level"), async (req, res) => {
   const dept = req.query.department ? String(req.query.department) : null;
   const status = req.query.status ? String(req.query.status) : "active";
   const r = await pool!.query(
@@ -72,7 +73,7 @@ async function upsertEmployee(
 // - full: the file is the complete active roster; active employees NOT in the file are
 //   marked inactive (never deleted — history must survive for audit).
 // - dryRun=true: parse + validate + report what WOULD happen, write nothing.
-employees.post("/api/admin/import/employees", upload.single("file"), async (req, res) => {
+employees.post("/api/admin/import/employees", requireRole("hr_admin"), upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ ok: false, detail: "Attach an .xlsx file in field \"file\"" });
   const mode = req.query.mode === "full" ? "full" : "upsert";
   const dryRun = String(req.query.dryRun) === "true";
