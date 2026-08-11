@@ -1,0 +1,22 @@
+# Local development database ONLY.
+# Production uses E2E Networks DBaaS — never run Postgres in Docker on the production VM.
+#
+# Usage:  docker compose -f deploy/docker-compose.dev.yml up -d
+# Then in server/.env:
+#   DATABASE_URL=postgresql://examuser:localdevpass@localhost:5432/sop_exams
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: examuser
+      POSTGRES_PASSWORD: localdevpass
+      POSTGRES_DB: sop_exams
+      TZ: Asia/Kolkata
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

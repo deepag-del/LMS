@@ -1,0 +1,16 @@
+* { box-sizing: border-box; margin: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f9f9f7; color: #0b0b0b; line-height: 1.5;
+}
+main { max-width: 760px; margin: 48px auto; padding: 0 24px; }
+h1 { font-size: 22px; margin-bottom: 4px; }
+.sub { color: #52514e; font-size: 14px; margin-bottom: 20px; }
+.checks { list-style: none; padding: 0; }
+.checks li {
+  background: #fcfcfb; border: 1px solid rgba(11,11,11,0.10); border-radius: 10px;
+  padding: 12px 16px; margin-bottom: 10px; font-size: 14px;
+}
+.ok { color: #006300; font-weight: 600; }
+.fail { color: #d03b3b; font-weight: 600; }
+.pending { color: #898781; }

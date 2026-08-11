@@ -1,0 +1,29 @@
+# Nginx site config for the E2E VM.
+# Copy to /etc/nginx/sites-available/sop-exams and symlink into sites-enabled
+# (exact commands are in docs/module-1-e2e-runbook.md, step 6).
+# Replace exams.morepenpdr.com with the real subdomain you point at the VM.
+
+server {
+    listen 80;
+    server_name exams.morepenpdr.com;
+
+    # React build output (client/dist), copied to /var/www/sop-exams
+    root /var/www/sop-exams;
+    index index.html;
+
+    # API requests go to the Node server on port 4000
+    location /api/ {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Everything else serves the React app (client-side routing)
+    location / {
+        try_files $uri /index.html;
+    }
+}
+
+# HTTPS: after DNS points here, run  sudo certbot --nginx -d exams.morepenpdr.com
+# Certbot rewrites this file to add the TLS (443) server block automatically.
