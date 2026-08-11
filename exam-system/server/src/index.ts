@@ -9,6 +9,7 @@ import { employees } from "./routes/employees";
 import { holidays } from "./routes/holidays";
 import { users } from "./routes/users";
 import { questions } from "./routes/questions";
+import { selection } from "./routes/selection";
 
 const app = express();
 app.set("trust proxy", 1); // behind Nginx: report the real client IP in sessions/audit
@@ -30,6 +31,9 @@ app.use(sessionGate, users);
 
 // ---- Module 4: question bank & approval workflow ----
 app.use(sessionGate, questions);
+
+// ---- Module 5: selection engine ----
+app.use(sessionGate, selection);
 
 // ---- Module 1: health endpoints (used to verify the E2E VM, DBaaS and email are wired up) ----
 
