@@ -2,9 +2,17 @@ import express from "express";
 import { config } from "./config";
 import { checkDb } from "./db";
 import { checkEmail, sendMail } from "./mailer";
+import { departments } from "./routes/departments";
+import { employees } from "./routes/employees";
+import { holidays } from "./routes/holidays";
 
 const app = express();
 app.use(express.json());
+
+// ---- Module 2: data foundation ----
+app.use(departments);
+app.use(employees);
+app.use(holidays);
 
 // ---- Module 1: health endpoints (used to verify the E2E VM, DBaaS and email are wired up) ----
 
@@ -44,6 +52,12 @@ app.post("/api/health/email/test", async (req, res) => {
   } catch (e) {
     res.status(503).json({ ok: false, detail: (e as Error).message });
   }
+});
+
+// Uniform error handler: log server-side, never leak internals to the client.
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  res.status(500).json({ ok: false, detail: "Internal server error" });
 });
 
 app.listen(config.port, () => {
